@@ -1,0 +1,32 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Contact {
+  id           String        @id @default(cuid())
+  name         String
+  tier         String        // daily, weekly, monthly, quarterly
+  lastFika     DateTime?
+  notes        String?       // Encrypted client-side
+  hooks        Json?         // Encrypted client-side (JSON string)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  interactions Interaction[]
+}
+
+model Interaction {
+  id        String   @id @default(cuid())
+  contactId String
+  contact   Contact  @relation(fields: [contactId], references: [id])
+  type      String   // fika, call, text, meeting
+  timestamp DateTime @default(now())
+  notes     String?
+}
