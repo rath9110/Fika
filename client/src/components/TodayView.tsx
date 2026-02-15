@@ -13,20 +13,20 @@ const TodayView: React.FC<Props> = ({ contacts, onConnect, onSnooze }) => {
 
     if (due.length === 0) {
         return (
-            <div className="py-32 text-center animate-in">
-                <div className="w-24 h-24 bg-fika-100/30 rounded-full flex items-center justify-center mx-auto mb-10">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-fika-300"><path d="M20 6 9 17l-5-5" /></svg>
+            <div className="py-8 md:py-12 text-center animate-in">
+                <div className="w-16 h-16 md:w-20 md:h-20 bg-fika-100/30 rounded-full flex items-center justify-center mx-auto mb-6 md:mb-8">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-fika-300"><path d="M20 6 9 17l-5-5" /></svg>
                 </div>
-                <h2 className="text-3xl font-black text-fika-900 tracking-tight">You’re up to date.</h2>
-                <p className="text-fika-500 mt-3 font-medium text-lg leading-relaxed max-w-sm mx-auto">Everyone has been reached out to recently — nice work!</p>
+                <h2 className="text-2xl md:text-3xl font-black text-fika-900 tracking-tight">You’re up to date.</h2>
+                <p className="text-fika-500 mt-2 md:mt-3 font-medium text-base md:text-lg leading-relaxed max-w-sm mx-auto">Everyone has been reached out to recently - nice work!</p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-10 animate-in font-sans">
+        <div className="space-y-6 md:space-y-8 animate-in font-sans">
             <h2 className="text-[11px] font-black text-fika-300 uppercase tracking-[0.25em] px-2">Today’s Connections</h2>
-            <div className="space-y-6">
+            <div className="space-y-4 md:space-y-6">
                 {due.map(c => {
                     const isBday = isBirthdayToday(c.birthday);
                     const days = getDaysSince(c.last_contacted_at);
@@ -34,13 +34,13 @@ const TodayView: React.FC<Props> = ({ contacts, onConnect, onSnooze }) => {
                     return (
                         <div
                             key={c.id}
-                            className={`bg-white rounded-[3rem] p-10 border shadow-soft card-interactive relative overflow-hidden group 
+                            className={`bg-white rounded-[2.5rem] md:rounded-[3rem] p-6 md:p-8 border shadow-soft card-interactive relative overflow-hidden group 
                 ${isBday ? 'border-orange-100 bg-gradient-to-br from-white to-orange-50/20' : 'border-fika-50'}`}
                         >
                             <div className="relative z-10">
                                 <div className="flex justify-between items-start mb-4">
                                     <div>
-                                        <h3 className="text-3xl font-black text-fika-900 tracking-tight leading-none mb-4">{c.name}</h3>
+                                        <h3 className="text-2xl md:text-3xl font-black text-fika-900 tracking-tight leading-none mb-3 md:mb-4">{c.name}</h3>
                                         <div className="space-y-1">
                                             <p className="text-lg text-fika-600 font-bold leading-snug">
                                                 {isBday
@@ -59,17 +59,17 @@ const TodayView: React.FC<Props> = ({ contacts, onConnect, onSnooze }) => {
                                     )}
                                 </div>
 
-                                <div className="flex flex-col gap-3 mt-10">
+                                <div className="flex flex-col gap-3 mt-6 md:mt-8">
                                     <button
                                         onClick={() => onConnect(c.id)}
-                                        className="w-full bg-fika-900 text-white font-black py-5 px-8 rounded-2xl btn-interactive shadow-xl shadow-fika-100 text-lg flex items-center justify-center gap-3"
+                                        className="w-full bg-fika-900 text-white font-black py-4 md:py-5 px-8 rounded-2xl btn-interactive shadow-xl shadow-fika-100 text-lg flex items-center justify-center gap-3"
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m9 11 3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>
                                         Connected today
                                     </button>
                                     <button
                                         onClick={() => onSnooze(c.id)}
-                                        className="w-full bg-fika-50 text-fika-600 font-black py-5 px-8 rounded-2xl btn-interactive hover:bg-fika-100/80 text-lg"
+                                        className="w-full bg-fika-50 text-fika-600 font-black py-4 md:py-5 px-8 rounded-2xl btn-interactive hover:bg-fika-100/80 text-lg"
                                     >
                                         Remind me tomorrow
                                     </button>
