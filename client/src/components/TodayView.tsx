@@ -44,7 +44,7 @@ const TodayView: React.FC<Props> = ({ contacts, onConnect, onSnooze }) => {
                                         <div className="space-y-1">
                                             <p className="text-lg text-fika-600 font-bold leading-snug">
                                                 {isBday
-                                                    ? `It’s ${c.name}’s birthday today.`
+                                                    ? `It’s ${c.name}’s birthday today - a gentle reminder to say hi.`
                                                     : `It might feel good to reach out to ${c.name}.`}
                                             </p>
                                             <p className="text-sm text-fika-400 font-bold uppercase tracking-wider">

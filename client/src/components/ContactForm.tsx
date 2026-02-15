@@ -12,6 +12,8 @@ const ContactForm: React.FC<Props> = ({ contact, onSave, onDelete, onClose }) =>
     const [name, setName] = useState(contact?.name || '');
     const [days, setDays] = useState(contact?.cadence_interval_days || 30);
     const [note, setNote] = useState(contact?.note || '');
+    const [bDay, setBDay] = useState(contact?.birthday ? new Date(contact.birthday).getDate().toString() : '');
+    const [bMonth, setBMonth] = useState(contact?.birthday ? (new Date(contact.birthday).getMonth() + 1).toString() : '');
 
     return (
         <div className="fixed inset-0 bg-espresso/60 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-in">
@@ -29,11 +31,17 @@ const ContactForm: React.FC<Props> = ({ contact, onSave, onDelete, onClose }) =>
 
                 <form onSubmit={e => {
                     e.preventDefault();
+                    let birthdayIso = undefined;
+                    if (bDay && bMonth) {
+                        const year = new Date().getFullYear();
+                        birthdayIso = new Date(year, Number(bMonth) - 1, Number(bDay)).toISOString();
+                    }
                     onSave({
                         name,
                         cadence_interval_days: days,
                         last_contacted_at: contact?.last_contacted_at || new Date().toISOString(),
                         birthday_pre_reminder: true,
+                        birthday: birthdayIso,
                         note: note || undefined,
                         snoozed_until: contact?.snoozed_until || null
                     });
@@ -74,8 +82,32 @@ const ContactForm: React.FC<Props> = ({ contact, onSave, onDelete, onClose }) =>
                             value={note}
                             onChange={e => setNote(e.target.value)}
                             placeholder="A short note..."
-                            className="w-full p-5 bg-fika-50 border-none rounded-2xl font-medium text-fika-900 focus:ring-4 focus:ring-fika-100 transition-all outline-none resize-none h-28"
+                            className="w-full p-5 bg-fika-50 border-none rounded-2xl font-medium text-fika-900 focus:ring-4 focus:ring-fika-100 transition-all outline-none resize-none h-24"
                         />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-xs font-black text-fika-400 uppercase tracking-widest ml-1">Birthday</label>
+                        <div className="flex gap-4">
+                            <input
+                                type="number"
+                                value={bDay}
+                                onChange={e => setBDay(e.target.value)}
+                                placeholder="Day"
+                                className="w-1/2 p-4 bg-fika-50 border-none rounded-2xl font-bold text-fika-900 focus:ring-4 focus:ring-fika-100 transition-all outline-none"
+                                min="1"
+                                max="31"
+                            />
+                            <input
+                                type="number"
+                                value={bMonth}
+                                onChange={e => setBMonth(e.target.value)}
+                                placeholder="Month"
+                                className="w-1/2 p-4 bg-fika-50 border-none rounded-2xl font-bold text-fika-900 focus:ring-4 focus:ring-fika-100 transition-all outline-none"
+                                min="1"
+                                max="12"
+                            />
+                        </div>
                     </div>
 
                     <div className="flex gap-4 pt-4">
