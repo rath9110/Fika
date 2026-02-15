@@ -10,13 +10,15 @@
     "dev": "concurrently \"npm run dev -w client\" \"npm run dev -w server\"",
     "start:client": "npm run dev -w client",
     "start:server": "npm run dev -w server",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:e2e": "playwright test"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "concurrently": "^9.2.1"
   }
 }
