@@ -1,38 +1,108 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+    --color-fika-50: #fdf8f6;
+    --color-fika-100: #f2e8e5;
+    --color-fika-200: #eaddd7;
+    --color-fika-300: #e0c1b3;
+    --color-fika-400: #d3a28e;
+    --color-fika-500: #c27e65;
+    --color-fika-600: #ae644b;
+    --color-fika-700: #91513c;
+    --color-fika-800: #784434;
+    --color-fika-900: #643b2e;
+    --color-fika-950: #351d16;
+    --color-cream: #FDFCF0;
+    --color-espresso: #2C1B18;
+
+    --font-sans: "Outfit", "Inter", ui-sans-serif, system-ui, sans-serif;
+
+    --shadow-soft: 0 4px 24px -4px rgba(0, 0, 0, 0.04);
+    --shadow-ritual: 0 20px 60px -15px rgba(100, 59, 46, 0.12);
+
+    /* Define premium easings */
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
 
 @layer base {
-  body {
-    @apply bg-cream text-espresso font-sans antialiased;
-  }
+    body {
+        @apply bg-cream text-espresso font-sans antialiased selection:bg-fika-100;
+        -webkit-tap-highlight-color: transparent;
+    }
 }
 
-@layer components {
-  .card-fika {
-    @apply bg-white rounded-2xl p-6 shadow-soft border border-fika-100 hover:shadow-ritual transition-all duration-300;
-  }
-  
-  .btn-fika {
-    @apply px-6 py-2 rounded-full font-medium transition-all duration-200 active:scale-95;
-  }
-  
-  .btn-primary {
-    @apply btn-fika bg-fika-600 text-white hover:bg-fika-700 shadow-lg shadow-fika-200;
-  }
-  
-  .btn-secondary {
-    @apply btn-fika bg-white text-fika-800 border-2 border-fika-100 hover:border-fika-200;
-  }
+/* Micro-interactions & Feedback */
+
+.btn-interactive {
+    transition-property: all;
+    transition-duration: 300ms;
+    transition-timing-function: var(--ease-spring);
 }
 
-/* Custom animations for the Ritual Dashboard */
-@keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
+.btn-interactive:hover {
+    @apply brightness-110 -translate-y-0.5 shadow-xl;
 }
 
-.animate-float {
-  animation: float 6s ease-in-out infinite;
+.btn-interactive:active {
+    @apply translate-y-0 scale-[0.96] brightness-90 shadow-md;
+    transition-duration: 100ms;
+}
+
+.card-interactive {
+    @apply transition-all duration-500 ease-[var(--ease-out-expo)];
+}
+
+.card-interactive:hover {
+    @apply shadow-ritual border-fika-200/50 -translate-y-1.5;
+}
+
+/* Status Notifications */
+.status-toast {
+    @apply fixed left-1/2 -translate-x-1/2 px-8 py-5 bg-fika-950 text-white rounded-[2rem] shadow-2xl font-black flex items-center gap-4 z-[100] backdrop-blur-xl border border-white/10;
+    animation: slideInUp 0.8s var(--ease-out-expo) forwards;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translate(-50%, 40px) scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(1);
+    }
+}
+
+.animate-in {
+    animation: fadeIn 1s var(--ease-out-expo) forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.zoom-in {
+    animation: zoomIn 0.5s var(--ease-spring) forwards;
+}
+
+@keyframes zoomIn {
+    from {
+        opacity: 0;
+        transform: scale(0.85);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }

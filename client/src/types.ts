@@ -1,23 +1,12 @@
-export type TierId = 'daily' | 'weekly' | 'monthly' | 'quarterly';
-
 export interface Contact {
     id: string;
     name: string;
-    tier: TierId;
-    lastFika?: string; // ISO string
-    notes?: string;
-    hooks?: {
-        pets?: string;
-        health?: string;
-        hobbies?: string[];
-        lastLaugh?: string;
-    };
-}
-
-export interface Tier {
-    id: TierId;
-    name: string;
-    description: string;
-    color: string;
-    cadenceInDays: number;
+    cadence_interval_days: number;
+    last_contacted_at: string;
+    birthday?: string;
+    birthday_pre_reminder: boolean;
+    snoozed_until?: string | null;
+    note?: string;
+    created_at: string;
+    updated_at: string;
 }
