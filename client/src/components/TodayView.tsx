@@ -24,8 +24,8 @@ const TodayView: React.FC<Props> = ({ contacts, onConnect, onSnooze }) => {
     }
 
     return (
-        <div className="space-y-6 md:space-y-8 animate-in font-sans">
-            <h2 className="text-[11px] font-black text-fika-300 uppercase tracking-[0.25em] px-2">Today’s Connections</h2>
+        <div className="animate-in font-sans">
+            <h2 className="text-[11px] font-black text-fika-300 uppercase tracking-[0.25em] px-2 sticky top-0 bg-cream z-20 py-6 mb-2">Today’s Connections</h2>
             <div className="space-y-4 md:space-y-6">
                 {due.map(c => {
                     const isBday = isBirthdayToday(c.birthday);
