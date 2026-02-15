@@ -71,7 +71,7 @@ function App() {
                     </p>
                 </div>
                 <button
-                    onClick={() => { setEditing(undefined); setShowModal(true); }}
+                    onClick={() => { setEditing(undefined); setShowModal(true); showFeedback("Preparing profile..."); }}
                     className="bg-fika-900 text-white w-16 h-16 md:w-20 md:h-20 rounded-[1.5rem] md:rounded-[2rem] flex items-center justify-center shadow-2xl shadow-fika-200 btn-interactive text-2xl"
                     aria-label="Add Someone"
                 >
@@ -79,11 +79,11 @@ function App() {
                 </button>
             </header>
 
-            <main className="max-w-2xl mx-auto px-6 w-full flex-1 md:overflow-y-auto no-scrollbar pb-32 md:pb-24">
+            <main className="max-w-2xl mx-auto px-6 w-full flex-1 md:overflow-y-auto no-scrollbar pb-32 md:pb-48">
                 {view === 'today' ? (
                     <TodayView contacts={contacts} onConnect={handleConnect} onSnooze={handleSnooze} />
                 ) : (
-                    <PeopleList contacts={contacts} onSelect={c => { setEditing(c); setShowModal(true); }} />
+                    <PeopleList contacts={contacts} onSelect={c => { setEditing(c); setShowModal(true); showFeedback(`Opening ${c.name}'s profile...`); }} />
                 )}
             </main>
 
@@ -117,7 +117,14 @@ function App() {
                 </div>
             )}
 
-            {showModal && <ContactForm contact={editing} onSave={handleSave} onDelete={handleDelete} onClose={() => setShowModal(false)} />}
+            {showModal && (
+                <ContactForm
+                    contact={editing}
+                    onSave={handleSave}
+                    onDelete={handleDelete}
+                    onClose={() => setShowModal(false)}
+                />
+            )}
         </div>
     )
 }
