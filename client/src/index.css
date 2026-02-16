@@ -89,25 +89,56 @@
     @apply shadow-ritual border-fika-200/50;
 }
 
-/* Status Notifications */
+/* Updated Toast Notifications - Right Side Slide + Countdown */
 .status-toast-wrapper {
-    @apply fixed bottom-40 inset-x-0 flex justify-center pointer-events-none z-[100];
+    @apply fixed bottom-32 md:bottom-36 right-6 md:right-12 flex flex-col items-end pointer-events-none z-[100];
 }
 
 .status-toast-inner {
-    @apply w-[300px] h-[52px] bg-fika-950 text-white rounded-[1.5rem] shadow-2xl font-black flex items-center justify-center gap-3 pointer-events-auto backdrop-blur-xl border border-white/10;
-    animation: slideInUp 0.8s var(--ease-out-expo) forwards;
+    @apply relative w-[320px] bg-fika-950 text-white rounded-[1.25rem] shadow-2xl font-black flex items-center p-5 gap-4 pointer-events-auto backdrop-blur-xl border border-white/10 overflow-hidden;
+    animation: slideInRight 0.6s var(--ease-spring) forwards;
 }
 
-@keyframes slideInUp {
+.status-toast-exit {
+    animation: slideOutRight 0.5s var(--ease-out-expo) forwards;
+}
+
+@keyframes slideInRight {
     from {
+        transform: translateX(120%);
         opacity: 0;
-        transform: translateY(30px) scale(0.9);
     }
 
     to {
+        transform: translateX(0);
         opacity: 1;
-        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    to {
+        transform: translateX(120%);
+        opacity: 0;
+    }
+}
+
+.toast-timer {
+    @apply absolute bottom-0 left-0 h-1 bg-fika-500;
+    animation: shrinkLine 3000ms linear forwards;
+}
+
+@keyframes shrinkLine {
+    from {
+        width: 100%;
+    }
+
+    to {
+        width: 0%;
     }
 }
 

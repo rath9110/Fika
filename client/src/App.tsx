@@ -11,7 +11,7 @@ function App() {
     const [view, setView] = useState<'today' | 'people'>('today');
     const [showModal, setShowModal] = useState(false);
     const [editing, setEditing] = useState<Contact | undefined>();
-    const [toast, setToast] = useState<string | null>(null);
+    const [toast, setToast] = useState<{ msg: string; exiting: boolean } | null>(null);
 
     useEffect(() => {
         fetchContacts().then(data => {
@@ -24,8 +24,11 @@ function App() {
     }, [contacts]);
 
     const showFeedback = (msg: string) => {
-        setToast(msg);
-        setTimeout(() => setToast(null), 3000);
+        setToast({ msg, exiting: false });
+        setTimeout(() => {
+            setToast(prev => prev ? { ...prev, exiting: true } : null);
+            setTimeout(() => setToast(null), 500);
+        }, 3000);
     };
 
     const handleConnect = (id: string) => {
@@ -110,9 +113,10 @@ function App() {
             {/* Feedback Toast */}
             {toast && (
                 <div className="status-toast-wrapper">
-                    <div className="status-toast-inner">
+                    <div className={`status-toast-inner ${toast.exiting ? 'status-toast-exit' : ''}`}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-orange-300"><path d="m9 11 3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>
-                        <span className="text-base">{toast}</span>
+                        <span className="text-base">{toast.msg}</span>
+                        <div className="toast-timer" />
                     </div>
                 </div>
             )}
