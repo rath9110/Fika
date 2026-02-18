@@ -33,6 +33,8 @@
     body {
         @apply bg-cream text-espresso font-sans antialiased selection:bg-fika-100 md:overflow-hidden md:h-screen;
         -webkit-tap-highlight-color: transparent;
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
     }
 }
 

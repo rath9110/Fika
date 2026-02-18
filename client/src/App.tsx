@@ -1,3 +1,4 @@
+import { Haptics, ImpactStyle } from '@capacitor/haptics'
 import { useState, useEffect } from 'react'
 import TodayView from './components/TodayView'
 import PeopleList from './components/PeopleList'
@@ -5,6 +6,14 @@ import ContactForm from './components/ContactForm'
 import { MOCK_CONTACTS } from './mockData'
 import type { Contact } from './types'
 import { fetchContacts, saveContacts } from './utils/api'
+
+const triggerHaptic = async (style: ImpactStyle = ImpactStyle.Light) => {
+    try {
+        await Haptics.impact({ style });
+    } catch {
+        // Fallback for web
+    }
+}
 
 function App() {
     const [contacts, setContacts] = useState<Contact[]>([]);
@@ -33,6 +42,7 @@ function App() {
 
     const handleConnect = (id: string) => {
         setContacts(prev => prev.map(c => c.id === id ? { ...c, last_contacted_at: new Date().toISOString(), snoozed_until: null } : c));
+        triggerHaptic(ImpactStyle.Medium);
         showFeedback("Connected today — good work!");
     };
 
@@ -40,15 +50,18 @@ function App() {
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         setContacts(prev => prev.map(c => c.id === id ? { ...c, snoozed_until: tomorrow.toISOString() } : c));
+        triggerHaptic(ImpactStyle.Light);
         showFeedback("Remind me tomorrow — no worries.");
     };
 
     const handleSave = (data: Omit<Contact, 'id' | 'created_at' | 'updated_at'>) => {
         if (editing) {
             setContacts(prev => prev.map(c => c.id === editing.id ? { ...c, ...data, updated_at: new Date().toISOString() } : c));
+            triggerHaptic(ImpactStyle.Medium);
             showFeedback("Profile updated.");
         } else {
             setContacts(prev => [{ ...data, id: Math.random().toString(36).substr(2, 9), created_at: new Date().toISOString(), updated_at: new Date().toISOString() }, ...prev]);
+            triggerHaptic(ImpactStyle.Medium);
             showFeedback("Contact added.");
         }
         setShowModal(false);
@@ -93,7 +106,7 @@ function App() {
             {/* Navigation */}
             <nav className="fixed bottom-8 md:bottom-12 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-2xl border border-fika-100/50 p-2 md:p-2.5 rounded-[2.5rem] md:rounded-[3rem] shadow-ritual flex gap-1 md:gap-1.5 z-50">
                 <button
-                    onClick={() => setView('today')}
+                    onClick={() => { setView('today'); triggerHaptic(ImpactStyle.Light); }}
                     className={`px-10 py-5 rounded-[2.5rem] font-black transition-all duration-300 flex items-center gap-3 text-sm uppercase tracking-widest
             ${view === 'today' ? 'bg-fika-900 text-white shadow-xl translate-y-[-2px]' : 'text-fika-300 hover:text-fika-600'}`}
                 >
@@ -101,7 +114,7 @@ function App() {
                     Today
                 </button>
                 <button
-                    onClick={() => setView('people')}
+                    onClick={() => { setView('people'); triggerHaptic(ImpactStyle.Light); }}
                     className={`px-10 py-5 rounded-[2.5rem] font-black transition-all duration-300 flex items-center gap-3 text-sm uppercase tracking-widest
             ${view === 'people' ? 'bg-fika-900 text-white shadow-xl translate-y-[-2px]' : 'text-fika-300 hover:text-fika-600'}`}
                 >
