@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Fika</string>
+    <string name="title_activity_main">Fika</string>
+    <string name="package_name">com.fika.app</string>
+    <string name="custom_url_scheme">com.fika.app</string>
+</resources>
