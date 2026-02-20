@@ -10,22 +10,37 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id        String    @id @default(cuid())
+  googleId  String    @unique
+  email     String    @unique
+  name      String
+  avatar    String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  contacts  Contact[]
+}
+
 model Contact {
-  id           String        @id @default(cuid())
-  name         String
-  tier         String        // daily, weekly, monthly, quarterly
-  lastFika     DateTime?
-  notes        String?       // Encrypted client-side
-  hooks        Json?         // Encrypted client-side (JSON string)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  interactions Interaction[]
+  id                    String        @id @default(cuid())
+  userId                String
+  user                  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                  String
+  cadence_interval_days Int           @default(30)
+  last_contacted_at     DateTime      @default(now())
+  birthday              DateTime?
+  birthday_pre_reminder Boolean       @default(true)
+  snoozed_until         DateTime?
+  note                  String?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  interactions          Interaction[]
 }
 
 model Interaction {
   id        String   @id @default(cuid())
   contactId String
-  contact   Contact  @relation(fields: [contactId], references: [id])
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
   type      String   // fika, call, text, meeting
   timestamp DateTime @default(now())
   notes     String?
