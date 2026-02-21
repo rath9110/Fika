@@ -1,6 +1,7 @@
 import type { Contact } from '../types';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const LS_KEY = 'fika_contacts_v2';
 
 // Serialise a Contact (frontend shape) to the shape the server expects
 const toServer = (c: Partial<Contact>) => ({
@@ -27,7 +28,29 @@ const fromServer = (c: any): Contact => ({
     updated_at: c.updatedAt,
 });
 
-export const fetchContacts = async (): Promise<Contact[]> => {
+// localStorage helpers (used when not signed in)
+const fromLocalStorage = (): Contact[] => {
+    try {
+        const raw = localStorage.getItem(LS_KEY);
+        const data = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(data)) return [];
+        return data.map((c: any) => ({
+            id: c.id || Math.random().toString(36).substr(2, 9),
+            name: c.name || 'Unknown',
+            cadence_interval_days: Number(c.cadence_interval_days) || 30,
+            last_contacted_at: c.last_contacted_at || new Date().toISOString(),
+            birthday: c.birthday || undefined,
+            birthday_pre_reminder: !!c.birthday_pre_reminder,
+            snoozed_until: c.snoozed_until || null,
+            note: c.note || '',
+            created_at: c.created_at || new Date().toISOString(),
+            updated_at: c.updated_at || new Date().toISOString(),
+        }));
+    } catch { return []; }
+};
+
+export const fetchContacts = async (authenticated = false): Promise<Contact[]> => {
+    if (!authenticated) return fromLocalStorage();
     try {
         const res = await fetch(`${API}/api/contacts`, { credentials: 'include' });
         if (!res.ok) return [];
@@ -64,5 +87,7 @@ export const deleteContact = async (id: string): Promise<void> => {
     });
 };
 
-// Kept for backward compat (no-op — server saves automatically)
-export const saveContacts = async (_contacts: Contact[]): Promise<void> => { };
+// Kept for backward compat — persists to localStorage for unauthenticated users
+export const saveContacts = async (contacts: Contact[]): Promise<void> => {
+    localStorage.setItem(LS_KEY, JSON.stringify(contacts));
+};

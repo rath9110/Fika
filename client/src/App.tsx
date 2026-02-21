@@ -3,10 +3,10 @@ import { useState, useEffect } from 'react'
 import TodayView from './components/TodayView'
 import PeopleList from './components/PeopleList'
 import ContactForm from './components/ContactForm'
-import AuthPage from './components/AuthPage'
+import AccountView from './components/AuthPage'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import type { Contact } from './types'
-import { fetchContacts, createContact, updateContact, deleteContact } from './utils/api'
+import { fetchContacts, createContact, updateContact, deleteContact, saveContacts } from './utils/api'
 
 const triggerHaptic = async (style: ImpactStyle = ImpactStyle.Light) => {
     try {
@@ -20,19 +20,24 @@ function AppContent() {
     const { user, loading } = useAuth();
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [view, setView] = useState<'today' | 'people'>('today');
+    const [showAccount, setShowAccount] = useState(false);
     const [showModal, setShowModal] = useState(false);
-    const [showAuth, setShowAuth] = useState(false);
     const [editing, setEditing] = useState<Contact | undefined>();
     const [toast, setToast] = useState<{ msg: string; exiting: boolean } | null>(null);
 
-    // Load contacts from backend when user signs in
+    // Load contacts: from backend if signed in, from localStorage otherwise
     useEffect(() => {
-        if (user) {
-            fetchContacts().then(data => setContacts(data));
-        } else if (!loading) {
-            setContacts([]);
+        if (!loading) {
+            fetchContacts(user !== null).then(data => setContacts(data));
         }
     }, [user, loading]);
+
+    // Persist to localStorage when unauthenticated (so edits survive reload)
+    useEffect(() => {
+        if (!user && !loading && contacts.length > 0) {
+            saveContacts(contacts);
+        }
+    }, [contacts, user, loading]);
 
     const showFeedback = (msg: string) => {
         setToast({ msg, exiting: false });
@@ -47,7 +52,7 @@ function AppContent() {
         if (!c) return;
         const updated = { ...c, last_contacted_at: new Date().toISOString(), snoozed_until: null };
         setContacts(prev => prev.map(x => x.id === id ? updated : x));
-        await updateContact(id, updated);
+        if (user) await updateContact(id, updated);
         triggerHaptic(ImpactStyle.Medium);
         showFeedback("Connected today — good work!");
     };
@@ -59,7 +64,7 @@ function AppContent() {
         if (!c) return;
         const updated = { ...c, snoozed_until: tomorrow.toISOString() };
         setContacts(prev => prev.map(x => x.id === id ? updated : x));
-        await updateContact(id, updated);
+        if (user) await updateContact(id, updated);
         triggerHaptic(ImpactStyle.Light);
         showFeedback("Remind me tomorrow — no worries.");
     };
@@ -68,12 +73,22 @@ function AppContent() {
         if (editing) {
             const updated = { ...editing, ...data, updated_at: new Date().toISOString() };
             setContacts(prev => prev.map(c => c.id === editing.id ? updated : c));
-            await updateContact(editing.id, data);
+            if (user) await updateContact(editing.id, data);
             triggerHaptic(ImpactStyle.Medium);
             showFeedback("Profile updated.");
         } else {
-            const created = await createContact(data);
-            setContacts(prev => [created, ...prev]);
+            if (user) {
+                const created = await createContact(data);
+                setContacts(prev => [created, ...prev]);
+            } else {
+                const localContact: Contact = {
+                    ...data,
+                    id: Math.random().toString(36).substr(2, 9),
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                };
+                setContacts(prev => [localContact, ...prev]);
+            }
             triggerHaptic(ImpactStyle.Medium);
             showFeedback("Contact added.");
         }
@@ -84,10 +99,15 @@ function AppContent() {
     const handleDelete = async (id: string) => {
         if (window.confirm('Remove this person from your ritual?')) {
             setContacts(prev => prev.filter(c => c.id !== id));
-            await deleteContact(id);
+            if (user) await deleteContact(id);
             showFeedback("Contact removed.");
             setShowModal(false);
         }
+    };
+
+    const navigate = (v: 'today' | 'people') => {
+        setView(v);
+        triggerHaptic(ImpactStyle.Light);
     };
 
     if (loading) {
@@ -103,37 +123,36 @@ function AppContent() {
             <header className="pt-10 md:pt-12 pb-6 md:pb-8 px-6 max-w-2xl mx-auto flex justify-between items-end w-full shrink-0">
                 <div>
                     <h1 className="text-[3rem] md:text-[3.5rem] font-black text-fika-900 tracking-[-0.04em] leading-[0.9]">Fika</h1>
-                    <p className="text-fika-500 font-bold mt-2 md:mt-3 text-base tracking-wide flex items-center gap-2 uppercase tracking-[0.1em] text-[10px]">
+                    <p className="text-fika-500 font-bold mt-2 md:mt-3 flex items-center gap-2 uppercase tracking-[0.1em] text-[10px]">
                         <span className="w-1.5 h-1.5 bg-fika-400 rounded-full" />
                         Stay in touch.
                     </p>
                 </div>
 
                 <div className="flex items-end gap-3">
-                    {/* Profile / Account button */}
+                    {/* Person / Account — small ghost button (secondary) */}
                     <button
                         id="account-btn"
-                        onClick={() => setShowAuth(true)}
-                        className="relative bg-white border-2 border-fika-100 w-16 h-16 md:w-20 md:h-20 rounded-[1.5rem] md:rounded-[2rem] flex items-center justify-center shadow-md btn-interactive overflow-hidden"
+                        onClick={() => { setShowAccount(true); triggerHaptic(ImpactStyle.Light); }}
+                        className="relative w-12 h-12 md:w-14 md:h-14 rounded-[1rem] md:rounded-[1.25rem] border-2 border-fika-100 bg-white/80 flex items-center justify-center btn-interactive overflow-hidden shadow-sm"
                         aria-label="Account"
                     >
                         {user?.avatar ? (
                             <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
                         ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-fika-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-fika-400">
                                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
                             </svg>
                         )}
-                        {/* Green dot if signed in */}
                         {user && (
-                            <span className="absolute bottom-1.5 right-1.5 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white" />
+                            <span className="absolute bottom-1 right-1 w-2 h-2 bg-green-400 rounded-full border border-white" />
                         )}
                     </button>
 
-                    {/* Add contact button */}
+                    {/* Add contact — large dark primary CTA */}
                     <button
                         onClick={() => { setEditing(undefined); setShowModal(true); showFeedback("Preparing profile..."); }}
-                        className="bg-fika-900 text-white w-16 h-16 md:w-20 md:h-20 rounded-[1.5rem] md:rounded-[2rem] flex items-center justify-center shadow-2xl shadow-fika-200 btn-interactive text-2xl"
+                        className="bg-fika-900 text-white w-16 h-16 md:w-20 md:h-20 rounded-[1.5rem] md:rounded-[2rem] flex items-center justify-center shadow-2xl shadow-fika-200 btn-interactive"
                         aria-label="Add Someone"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
@@ -142,48 +161,24 @@ function AppContent() {
             </header>
 
             <main className="max-w-2xl mx-auto px-6 w-full flex-1 md:overflow-y-auto no-scrollbar pb-32 md:pb-48">
-                {!user ? (
-                    /* Not signed in — prompt to sign in */
-                    <div className="flex flex-col items-center justify-center h-full text-center gap-6 py-20">
-                        <div className="w-20 h-20 rounded-[1.75rem] bg-fika-100 flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-fika-400">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-                            </svg>
-                        </div>
-                        <div>
-                            <h2 className="text-2xl font-black text-fika-900">Sign in to get started</h2>
-                            <p className="text-fika-400 mt-2 text-sm leading-relaxed max-w-xs">
-                                Your contacts sync across all your devices when you're signed in.
-                            </p>
-                        </div>
-                        <button
-                            onClick={() => setShowAuth(true)}
-                            className="bg-fika-900 text-white px-8 py-4 rounded-2xl font-black shadow-xl shadow-fika-200 btn-interactive"
-                        >
-                            Sign in with Google
-                        </button>
-                    </div>
-                ) : view === 'today' ? (
-                    <TodayView contacts={contacts} onConnect={handleConnect} onSnooze={handleSnooze} />
-                ) : (
-                    <PeopleList contacts={contacts} onSelect={c => { setEditing(c); setShowModal(true); showFeedback(`Opening ${c.name}'s profile...`); }} />
-                )}
+                {view === 'today' && <TodayView contacts={contacts} onConnect={handleConnect} onSnooze={handleSnooze} />}
+                {view === 'people' && <PeopleList contacts={contacts} onSelect={c => { setEditing(c); setShowModal(true); showFeedback(`Opening ${c.name}'s profile...`); }} />}
             </main>
 
-            {/* Navigation */}
+            {/* Navigation — clean two-tab bar */}
             <nav className="fixed bottom-8 md:bottom-12 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-2xl border border-fika-100/50 p-2 md:p-2.5 rounded-[2.5rem] md:rounded-[3rem] shadow-ritual flex gap-1 md:gap-1.5 z-50">
                 <button
-                    onClick={() => { setView('today'); triggerHaptic(ImpactStyle.Light); }}
+                    onClick={() => navigate('today')}
                     className={`px-10 py-5 rounded-[2.5rem] font-black transition-all duration-300 flex items-center gap-3 text-sm uppercase tracking-widest
-            ${view === 'today' ? 'bg-fika-900 text-white shadow-xl translate-y-[-2px]' : 'text-fika-300 hover:text-fika-600'}`}
+                        ${view === 'today' ? 'bg-fika-900 text-white shadow-xl translate-y-[-2px]' : 'text-fika-300 hover:text-fika-600'}`}
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
                     Today
                 </button>
                 <button
-                    onClick={() => { setView('people'); triggerHaptic(ImpactStyle.Light); }}
+                    onClick={() => navigate('people')}
                     className={`px-10 py-5 rounded-[2.5rem] font-black transition-all duration-300 flex items-center gap-3 text-sm uppercase tracking-widest
-            ${view === 'people' ? 'bg-fika-900 text-white shadow-xl translate-y-[-2px]' : 'text-fika-300 hover:text-fika-600'}`}
+                        ${view === 'people' ? 'bg-fika-900 text-white shadow-xl translate-y-[-2px]' : 'text-fika-300 hover:text-fika-600'}`}
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
                     People
@@ -210,9 +205,7 @@ function AppContent() {
                 />
             )}
 
-            {showAuth && (
-                <AuthPage onClose={() => { setShowAuth(false); }} />
-            )}
+            {showAccount && <AccountView onClose={() => setShowAccount(false)} />}
         </div>
     );
 }
