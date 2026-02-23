@@ -1,0 +1,17 @@
+{
+    "brand": {
+        "primary": "#4A3728",
+        "secondary": "#E8D8C3",
+        "accent": "#D4A373",
+        "background": "#FDFBF7",
+        "text": {
+            "main": "#2D241E",
+            "muted": "#7A6C5F"
+        }
+    },
+    "status": {
+        "success": "#8A9A5B",
+        "warning": "#E9C46A",
+        "info": "#A8DADC"
+    }
+}
