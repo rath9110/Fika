@@ -23,9 +23,6 @@ We avoid bright reds, alarming alerts, and high-pressure copy. Our UI uses warm 
 ### 2. High-Utility "Today" View
 Not a dashboard, but a focused lens. Fika shows you who needs your attention today and allows for one-tap "Connected" or "Remind tomorrow" actions.
 
-### 3. Smart Cadence
-Users define how often they want to see someone. Fika calculates the priority based on human rhythms, not rigid calendar intervals.
-
 ---
 
 ## Technical Strategy
