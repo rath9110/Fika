@@ -11,6 +11,7 @@ const toServer = (c: Partial<Contact>) => ({
     birthday: c.birthday || null,
     birthday_pre_reminder: c.birthday_pre_reminder,
     snoozed_until: c.snoozed_until || null,
+    snooze_count: c.snooze_count || 0,
     note: c.note || null,
 });
 
@@ -23,6 +24,7 @@ const fromServer = (c: any): Contact => ({
     birthday: c.birthday ?? undefined,
     birthday_pre_reminder: c.birthday_pre_reminder,
     snoozed_until: c.snoozed_until ?? null,
+    snooze_count: c.snooze_count ?? 0,
     note: c.note ?? undefined,
     created_at: c.createdAt,
     updated_at: c.updatedAt,
@@ -42,6 +44,7 @@ const fromLocalStorage = (): Contact[] => {
             birthday: c.birthday || undefined,
             birthday_pre_reminder: !!c.birthday_pre_reminder,
             snoozed_until: c.snoozed_until || null,
+            snooze_count: Number(c.snooze_count) || 0,
             note: c.note || '',
             created_at: c.created_at || new Date().toISOString(),
             updated_at: c.updated_at || new Date().toISOString(),

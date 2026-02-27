@@ -6,6 +6,7 @@ export interface Contact {
     birthday?: string;
     birthday_pre_reminder: boolean;
     snoozed_until?: string | null;
+    snooze_count?: number;
     note?: string;
     created_at: string;
     updated_at: string;

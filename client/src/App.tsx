@@ -50,7 +50,7 @@ function AppContent() {
     const handleConnect = async (id: string) => {
         const c = contacts.find(x => x.id === id);
         if (!c) return;
-        const updated = { ...c, last_contacted_at: new Date().toISOString(), snoozed_until: null };
+        const updated = { ...c, last_contacted_at: new Date().toISOString(), snoozed_until: null, snooze_count: 0 };
         setContacts(prev => prev.map(x => x.id === id ? updated : x));
         if (user) await updateContact(id, updated);
         triggerHaptic(ImpactStyle.Medium);
@@ -58,15 +58,26 @@ function AppContent() {
     };
 
     const handleSnooze = async (id: string) => {
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
         const c = contacts.find(x => x.id === id);
         if (!c) return;
-        const updated = { ...c, snoozed_until: tomorrow.toISOString() };
+
+        const currentCount = c.snooze_count || 0;
+        const delayDays = Math.pow(2, currentCount);
+        const nextCount = currentCount + 1;
+
+        const snoozeDate = new Date();
+        snoozeDate.setDate(snoozeDate.getDate() + delayDays);
+
+        const updated = { ...c, snoozed_until: snoozeDate.toISOString(), snooze_count: nextCount };
         setContacts(prev => prev.map(x => x.id === id ? updated : x));
         if (user) await updateContact(id, updated);
         triggerHaptic(ImpactStyle.Light);
-        showFeedback("Remind me tomorrow — no worries.");
+        let toastMsg = "Remind me tomorrow — no worries.";
+        if (delayDays === 2) toastMsg = "Taking a breather. Catch up in a couple of days.";
+        else if (delayDays === 4) toastMsg = "Giving it some space. We'll circle back next week.";
+        else if (delayDays > 4) toastMsg = "No rush. We'll revisit this connection later.";
+
+        showFeedback(toastMsg);
     };
 
     const handleSave = async (data: Omit<Contact, 'id' | 'created_at' | 'updated_at'>) => {

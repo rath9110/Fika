@@ -31,6 +31,7 @@ model Contact {
   birthday              DateTime?
   birthday_pre_reminder Boolean       @default(true)
   snoozed_until         DateTime?
+  snooze_count          Int           @default(0)
   note                  String?
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt

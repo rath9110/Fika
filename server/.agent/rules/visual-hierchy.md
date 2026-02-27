@@ -17,7 +17,7 @@ Name → bold + larger font
 
 Status text → lighter weight, smaller font
 
-Add subtle visual cue for priority (like overdue / birthday) using a neutral highlight (not red) — e.g., soft warm tint on the card or small badge.
+Add subtle visual cue for priority (like overdue / birthday) using a neutral highlight (not red) -e.g., soft warm tint on the card or small badge.
 
 2. Buttons and Touch Targets
 Observations
@@ -44,11 +44,11 @@ Keep color contrast high enough for accessibility (especially for “Remind tomo
 3. Card Text
 Observations
 
-“It might feel good to reach out to David — last contact 10 days ago”
+“It might feel good to reach out to David -last contact 10 days ago”
 
 Text is long and wraps awkwardly.
 
-The tone is gentle, but the “— last contact 10 days ago” part is visually heavy.
+The tone is gentle, but the “-last contact 10 days ago” part is visually heavy.
 
 Recommendations
 
@@ -71,7 +71,7 @@ Recommendations
 Use vertical alignment per person:
 
 Sarah
-Every 1 day — Last contacted 0d ago
+Every 1 day -Last contacted 0d ago
 
 Consider soft accent or small icon for people due today.
 
