@@ -1,18 +1,19 @@
 {
     "version": 2,
     "functions": {
-        "api/index.ts": {
+        "server/src/index.ts": {
+            "runtime": "@vercel/node@3.2.0",
             "includeFiles": "server/prisma/schema.prisma"
         }
     },
     "rewrites": [
         {
             "source": "/api/(.*)",
-            "destination": "/api"
+            "destination": "/server/src/index.ts"
         },
         {
             "source": "/auth/(.*)",
-            "destination": "/api"
+            "destination": "/server/src/index.ts"
         }
     ]
 }
