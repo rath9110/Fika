@@ -9,11 +9,11 @@
     "rewrites": [
         {
             "source": "/api/(.*)",
-            "destination": "/api/index"
+            "destination": "/api"
         },
         {
             "source": "/auth/(.*)",
-            "destination": "/api/index"
+            "destination": "/api"
         },
         {
             "source": "/(.*)",
