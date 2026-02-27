@@ -151,7 +151,7 @@ app.put('/api/contacts/:id', requireAuth, async (req, res) => {
     const { name, cadence_interval_days, last_contacted_at, birthday, birthday_pre_reminder, snoozed_until, snooze_count, note } = req.body;
     try {
         const contact = await prisma.contact.updateMany({
-            where: { id, userId },
+            where: { id: String(id), userId },
             data: {
                 name,
                 cadence_interval_days: Number(cadence_interval_days) || 30,
@@ -173,7 +173,7 @@ app.delete('/api/contacts/:id', requireAuth, async (req, res) => {
     const { id } = req.params;
     const userId = (req.user as any).id;
     try {
-        await prisma.contact.deleteMany({ where: { id, userId } });
+        await prisma.contact.deleteMany({ where: { id: String(id), userId } });
         res.json({ ok: true });
     } catch {
         res.status(500).json({ error: 'Failed to delete contact' });
