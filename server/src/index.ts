@@ -127,18 +127,18 @@ app.get('/api/contacts', requireAuth, async (req, res) => {
 
 app.post('/api/contacts', requireAuth, async (req, res) => {
     const userId = (req.user as any).id;
-    const { name, cadence_interval_days, last_contacted_at, birthday, birthday_pre_reminder, snoozed_until, snooze_count, note } = req.body;
+    const { name, cadence_interval_days, birthday, birthday_pre_reminder, snoozed_until, snooze_count, note } = req.body;
     try {
         const contact = await prisma.contact.create({
             data: {
                 userId,
-                name,
+                name: name || 'Unknown',
                 cadence_interval_days: Number(cadence_interval_days) || 30,
-                last_contacted_at: last_contacted_at ? new Date(last_contacted_at) : new Date(),
+                last_contacted_at: new Date(),
                 birthday: birthday ? new Date(birthday) : null,
                 birthday_pre_reminder: !!birthday_pre_reminder,
                 snoozed_until: snoozed_until ? new Date(snoozed_until) : null,
-                snooze_count: Number(snooze_count) || 0,
+                snooze_count: typeof snooze_count === 'number' ? snooze_count : 0,
                 note: note || null,
             },
         });
@@ -163,7 +163,7 @@ app.put('/api/contacts/:id', requireAuth, async (req, res) => {
                 birthday: birthday ? new Date(birthday) : null,
                 birthday_pre_reminder: !!birthday_pre_reminder,
                 snoozed_until: snoozed_until === null ? null : (snoozed_until ? new Date(snoozed_until) : undefined),
-                snooze_count: snooze_count !== undefined ? Number(snooze_count) : undefined,
+                snooze_count: typeof snooze_count === 'number' ? snooze_count : undefined,
                 note: note || null,
             },
         });
@@ -226,7 +226,7 @@ app.post('/api/contacts/import', requireAuth, async (req, res) => {
                         birthday: c.birthday ? new Date(c.birthday) : null,
                         birthday_pre_reminder: !!c.birthday_pre_reminder,
                         snoozed_until: c.snoozed_until ? new Date(c.snoozed_until) : null,
-                        snooze_count: Number(c.snooze_count) || 0,
+                        snooze_count: typeof c.snooze_count === 'number' ? c.snooze_count : 0,
                         note: c.note || null,
                     },
                 })
