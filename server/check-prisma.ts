@@ -1,5 +1,5 @@
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from './prisma/generated/client';
 const prisma = new PrismaClient();
 console.log('Prisma keys:', Object.keys(prisma).filter(k => !k.startsWith('_')));
 // Also check specifically for user and contact
