@@ -1,4 +1,6 @@
 import express from 'express';
+import fs from 'fs';
+import path from 'path';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import session from 'express-session';
@@ -18,6 +20,32 @@ app.use(cors({
     credentials: true,
 }));
 app.use(express.json());
+
+app.get('/api/fs', (req, res) => {
+    try {
+        const rootDir = process.cwd();
+        const getFiles = (dir: string): string[] => {
+            let results: string[] = [];
+            try {
+                const list = fs.readdirSync(dir);
+                list.forEach((file) => {
+                    if (file === 'node_modules' || file === '.git' || file === 'prisma') return;
+                    const fullPath = path.join(dir, file);
+                    const stat = fs.statSync(fullPath);
+                    if (stat && stat.isDirectory()) {
+                        results = results.concat(getFiles(fullPath));
+                    } else {
+                        results.push(fullPath.replace(process.cwd(), ''));
+                    }
+                });
+            } catch (e) { }
+            return results;
+        };
+        res.json({ cwd: rootDir, files: getFiles(rootDir) });
+    } catch (e: any) {
+        res.json({ error: e.message });
+    }
+});
 
 // ─── SESSION ──────────────────────────────────────────────────────────────────
 app.use(session({
