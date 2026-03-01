@@ -1,5 +1,6 @@
 {
     "version": 2,
+    "outputDirectory": "client/dist",
     "functions": {
         "api/index.ts": {
             "includeFiles": "server/prisma/schema.prisma"
