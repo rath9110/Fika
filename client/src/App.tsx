@@ -1,5 +1,5 @@
 import { Haptics, ImpactStyle } from '@capacitor/haptics'
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect, Component } from 'react'
 import TodayView from './components/TodayView'
 import PeopleList from './components/PeopleList'
 import ContactForm from './components/ContactForm'
@@ -221,11 +221,50 @@ function AppContent() {
     );
 }
 
+// ─── Error Boundary ──────────────────────────────────────────────────────────
+interface ErrorBoundaryState { hasError: boolean; error: Error | null; }
+
+class ErrorBoundary extends Component<{ children: React.ReactNode }, ErrorBoundaryState> {
+    constructor(props: { children: React.ReactNode }) {
+        super(props);
+        this.state = { hasError: false, error: null };
+    }
+    static getDerivedStateFromError(error: Error) {
+        return { hasError: true, error };
+    }
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="min-h-screen flex flex-col items-center justify-center bg-cream px-6 text-center gap-6">
+                    <div className="w-16 h-16 bg-red-100 rounded-[1.25rem] flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
+                            <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-black text-fika-900">Something went wrong</h2>
+                        <p className="text-sm text-fika-400 mt-2">Don't worry — your local contacts are safe.</p>
+                    </div>
+                    <button
+                        onClick={() => { this.setState({ hasError: false, error: null }); window.location.href = '/'; }}
+                        className="px-8 py-4 bg-fika-900 text-white font-black rounded-[1.25rem] shadow-xl btn-interactive"
+                    >
+                        Reload Fika
+                    </button>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
+
 function App() {
     return (
-        <AuthProvider>
-            <AppContent />
-        </AuthProvider>
+        <ErrorBoundary>
+            <AuthProvider>
+                <AppContent />
+            </AuthProvider>
+        </ErrorBoundary>
     );
 }
 

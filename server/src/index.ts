@@ -3,9 +3,9 @@ import fs from 'fs';
 import path from 'path';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import session from 'express-session';
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import jwt from 'jsonwebtoken';
 import { PrismaClient } from '../prisma/generated/client';
 
 dotenv.config();
@@ -13,6 +13,7 @@ dotenv.config();
 const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 5000;
+const JWT_SECRET = process.env.JWT_SECRET || process.env.SESSION_SECRET || 'fika-jwt-fallback';
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
 app.use(cors({
@@ -47,18 +48,9 @@ app.get('/api/fs', (req, res) => {
     }
 });
 
-// ─── SESSION ──────────────────────────────────────────────────────────────────
-app.use(session({
-    secret: process.env.SESSION_SECRET || 'fika-secret',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-        secure: false, // set to true in production with HTTPS
-        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    },
-}));
+// ─── PASSPORT (no sessions — JWT only) ────────────────────────────────────────
+app.use(passport.initialize());
 
-// ─── PASSPORT ─────────────────────────────────────────────────────────────────
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     passport.use(new GoogleStrategy(
         {
@@ -91,51 +83,59 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     console.warn("Skipping GoogleStrategy initialization: Missing credentials.");
 }
 
-passport.serializeUser((user: any, done) => done(null, user.id));
-passport.deserializeUser(async (id: string, done) => {
-    try {
-        const user = await prisma.user.findUnique({ where: { id } });
-        done(null, user);
-    } catch (err) {
-        done(err);
+// ─── JWT AUTH MIDDLEWARE ───────────────────────────────────────────────────────
+const requireAuth = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        res.status(401).json({ error: 'Not authenticated' });
+        return;
     }
-});
-
-app.use(passport.initialize());
-app.use(passport.session());
-
-// ─── AUTH MIDDLEWARE ───────────────────────────────────────────────────────────
-const requireAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    if (req.isAuthenticated()) return next();
-    res.status(401).json({ error: 'Not authenticated' });
+    try {
+        const token = authHeader.split(' ')[1];
+        const payload = jwt.verify(token, JWT_SECRET) as { userId: string };
+        const user = await prisma.user.findUnique({ where: { id: payload.userId } });
+        if (!user) {
+            res.status(401).json({ error: 'User not found' });
+            return;
+        }
+        (req as any).user = user;
+        next();
+    } catch {
+        res.status(401).json({ error: 'Invalid or expired token' });
+    }
 };
 
 // ─── AUTH ROUTES ──────────────────────────────────────────────────────────────
 app.get('/auth/google',
-    passport.authenticate('google', { scope: ['profile', 'email'] })
+    passport.authenticate('google', { scope: ['profile', 'email'], session: false })
 );
 
 app.get('/auth/google/callback',
-    passport.authenticate('google', { failureRedirect: `${process.env.FRONTEND_URL}/auth?error=true` }),
-    (_req, res) => {
-        res.redirect(process.env.FRONTEND_URL || 'http://localhost:5173');
+    passport.authenticate('google', { session: false, failureRedirect: `${process.env.FRONTEND_URL || 'http://localhost:5173'}?auth_error=true` }),
+    (req, res) => {
+        const user = req.user as any;
+        const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '30d' });
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        res.redirect(`${frontendUrl}?token=${token}`);
     }
 );
 
-app.get('/auth/me', (req, res) => {
-    if (req.isAuthenticated()) {
-        const { id, name, email, avatar } = req.user as any;
+app.get('/auth/me', async (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        res.json(null);
+        return;
+    }
+    try {
+        const token = authHeader.split(' ')[1];
+        const payload = jwt.verify(token, JWT_SECRET) as { userId: string };
+        const user = await prisma.user.findUnique({ where: { id: payload.userId } });
+        if (!user) { res.json(null); return; }
+        const { id, name, email, avatar } = user;
         res.json({ id, name, email, avatar });
-    } else {
+    } catch {
         res.json(null);
     }
-});
-
-app.post('/auth/logout', (req, res, next) => {
-    req.logout((err) => {
-        if (err) return next(err);
-        res.json({ ok: true });
-    });
 });
 
 // ─── CONTACTS API ─────────────────────────────────────────────────────────────

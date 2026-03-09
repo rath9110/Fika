@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const TOKEN_KEY = 'fika_auth_token';
 
 export interface AuthUser {
     id: string;
@@ -25,13 +26,32 @@ const AuthContext = createContext<AuthContextValue>({
 
 export const useAuth = () => useContext(AuthContext);
 
+/** Read the stored JWT (if any) */
+export const getAuthToken = (): string | null => localStorage.getItem(TOKEN_KEY);
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<AuthUser | null>(null);
     const [loading, setLoading] = useState(true);
 
+    // On mount: capture ?token= from the OAuth redirect URL
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('token');
+        if (token) {
+            localStorage.setItem(TOKEN_KEY, token);
+            // Clean the token out of the URL without a reload
+            const cleanUrl = window.location.pathname;
+            window.history.replaceState({}, '', cleanUrl);
+        }
+    }, []);
+
     const refetch = async () => {
+        const token = getAuthToken();
+        if (!token) { setUser(null); setLoading(false); return; }
         try {
-            const res = await fetch(`${API}/auth/me`, { credentials: 'include' });
+            const res = await fetch(`${API}/auth/me`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
             const data = await res.json();
             setUser(data);
         } catch {
@@ -42,7 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const logout = async () => {
-        await fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' });
+        localStorage.removeItem(TOKEN_KEY);
         setUser(null);
     };
 

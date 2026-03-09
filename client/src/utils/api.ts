@@ -1,7 +1,14 @@
 import type { Contact } from '../types';
+import { getAuthToken } from '../context/AuthContext';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const LS_KEY = 'fika_contacts_v2';
+
+/** Build auth headers from the stored JWT */
+const authHeaders = (): HeadersInit => {
+    const token = getAuthToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
 
 // Serialise a Contact (frontend shape) to the shape the server expects
 const toServer = (c: Partial<Contact>) => ({
@@ -55,7 +62,9 @@ const fromLocalStorage = (): Contact[] => {
 export const fetchContacts = async (authenticated = false): Promise<Contact[]> => {
     if (!authenticated) return fromLocalStorage();
     try {
-        const res = await fetch(`${API}/api/contacts`, { credentials: 'include' });
+        const res = await fetch(`${API}/api/contacts`, {
+            headers: authHeaders(),
+        });
         if (!res.ok) return [];
         const data = await res.json();
         return Array.isArray(data) ? data.map(fromServer) : [];
@@ -67,8 +76,7 @@ export const fetchContacts = async (authenticated = false): Promise<Contact[]> =
 export const createContact = async (data: Omit<Contact, 'id' | 'created_at' | 'updated_at'>): Promise<Contact> => {
     const res = await fetch(`${API}/api/contacts`, {
         method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify(toServer(data)),
     });
     return fromServer(await res.json());
@@ -77,8 +85,7 @@ export const createContact = async (data: Omit<Contact, 'id' | 'created_at' | 'u
 export const updateContact = async (id: string, data: Omit<Contact, 'id' | 'created_at' | 'updated_at'>): Promise<void> => {
     await fetch(`${API}/api/contacts/${id}`, {
         method: 'PUT',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify(toServer(data)),
     });
 };
@@ -86,7 +93,7 @@ export const updateContact = async (id: string, data: Omit<Contact, 'id' | 'crea
 export const deleteContact = async (id: string): Promise<void> => {
     await fetch(`${API}/api/contacts/${id}`, {
         method: 'DELETE',
-        credentials: 'include',
+        headers: authHeaders(),
     });
 };
 
@@ -94,3 +101,4 @@ export const deleteContact = async (id: string): Promise<void> => {
 export const saveContacts = async (contacts: Contact[]): Promise<void> => {
     localStorage.setItem(LS_KEY, JSON.stringify(contacts));
 };
+

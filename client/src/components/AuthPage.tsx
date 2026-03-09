@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, getAuthToken } from '../context/AuthContext';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const LS_KEY = 'fika_contacts_v2';
@@ -19,9 +19,10 @@ const AccountView: React.FC<Props> = ({ onClose }) => {
     const handleImport = async () => {
         setImporting(true);
         try {
+            const token = getAuthToken();
             await fetch(`${API}/api/contacts/import`, {
-                method: 'POST', credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
                 body: JSON.stringify({ contacts: localContacts }),
             });
             localStorage.removeItem(LS_KEY);
