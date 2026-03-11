@@ -162,7 +162,7 @@ function AppContent() {
 
                     {/* Add contact — large dark primary CTA */}
                     <button
-                        onClick={() => { setEditing(undefined); setShowModal(true); showFeedback("Preparing profile..."); }}
+                        onClick={() => { setEditing(undefined); setShowModal(true); }}
                         className="bg-fika-900 text-white w-16 h-16 md:w-20 md:h-20 rounded-[1.5rem] md:rounded-[2rem] flex items-center justify-center shadow-2xl shadow-fika-200 btn-interactive"
                         aria-label="Add Someone"
                     >
@@ -173,7 +173,7 @@ function AppContent() {
 
             <main className="max-w-2xl mx-auto px-6 w-full flex-1 md:overflow-y-auto no-scrollbar pb-32 md:pb-48">
                 {view === 'today' && <TodayView contacts={contacts} onConnect={handleConnect} onSnooze={handleSnooze} />}
-                {view === 'people' && <PeopleList contacts={contacts} onSelect={c => { setEditing(c); setShowModal(true); showFeedback(`Opening ${c.name}'s profile...`); }} />}
+                {view === 'people' && <PeopleList contacts={contacts} onSelect={c => { setEditing(c); setShowModal(true); }} />}
             </main>
 
             {/* Navigation — clean two-tab bar */}
