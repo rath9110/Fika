@@ -24,20 +24,24 @@ function AppContent() {
     const [showModal, setShowModal] = useState(false);
     const [editing, setEditing] = useState<Contact | undefined>();
     const [toast, setToast] = useState<{ msg: string; exiting: boolean } | null>(null);
+    const [hasLoaded, setHasLoaded] = useState(false);
 
     // Load contacts: from backend if signed in, from localStorage otherwise
     useEffect(() => {
         if (!loading) {
-            fetchContacts(user !== null).then(data => setContacts(data));
+            fetchContacts(user !== null).then(data => {
+                setContacts(data);
+                setHasLoaded(true);
+            });
         }
     }, [user, loading]);
 
     // Persist to localStorage when unauthenticated (so edits survive reload)
     useEffect(() => {
-        if (!user && !loading && contacts.length > 0) {
+        if (!user && !loading && hasLoaded) {
             saveContacts(contacts);
         }
-    }, [contacts, user, loading]);
+    }, [contacts, user, loading, hasLoaded]);
 
     const showFeedback = (msg: string) => {
         setToast({ msg, exiting: false });
