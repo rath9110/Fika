@@ -102,3 +102,10 @@ export const saveContacts = async (contacts: Contact[]): Promise<void> => {
     localStorage.setItem(LS_KEY, JSON.stringify(contacts));
 };
 
+export const updateUserSettings = async (settings: { emailNotifications: boolean }): Promise<void> => {
+    await fetch(`${API}/api/user/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify(settings)
+    });
+};

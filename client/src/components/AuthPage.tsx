@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth, getAuthToken } from '../context/AuthContext';
+import { updateUserSettings } from '../utils/api';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const LS_KEY = 'fika_contacts_v2';
@@ -7,9 +8,10 @@ const LS_KEY = 'fika_contacts_v2';
 interface Props { onClose: () => void; }
 
 const AccountView: React.FC<Props> = ({ onClose }) => {
-    const { user, logout } = useAuth();
+    const { user, logout, refetch } = useAuth();
     const [importing, setImporting] = useState(false);
     const [imported, setImported] = useState(false);
+    const [updatingSettings, setUpdatingSettings] = useState(false);
 
     const localContacts = (() => {
         try { const raw = localStorage.getItem(LS_KEY); return raw ? JSON.parse(raw) : []; }
@@ -28,6 +30,19 @@ const AccountView: React.FC<Props> = ({ onClose }) => {
             localStorage.removeItem(LS_KEY);
             setImported(true);
         } catch { /* fail silently */ } finally { setImporting(false); }
+    };
+
+    const handleToggleEmail = async () => {
+        if (!user || updatingSettings) return;
+        setUpdatingSettings(true);
+        try {
+            await updateUserSettings({ emailNotifications: !user.emailNotifications });
+            await refetch();
+        } catch (e) {
+            console.error('Failed to update email settings', e);
+        } finally {
+            setUpdatingSettings(false);
+        }
     };
 
     return (
@@ -69,6 +84,23 @@ const AccountView: React.FC<Props> = ({ onClose }) => {
                             <div className="flex items-center gap-1.5 shrink-0">
                                 <span className="w-2 h-2 bg-green-400 rounded-full" />
                                 <span className="text-xs font-black text-green-700">Syncing</span>
+                            </div>
+                        </div>
+
+                        {/* Settings */}
+                        <div className="bg-white rounded-[1.5rem] p-5 shadow-soft border border-fika-100/50 flex flex-col gap-4">
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <h3 className="font-black text-fika-900 text-sm">Daily Email Reminders</h3>
+                                    <p className="text-xs text-fika-400">Get a morning digest of who to catch up with.</p>
+                                </div>
+                                <button
+                                    onClick={handleToggleEmail}
+                                    disabled={updatingSettings}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${user.emailNotifications ? 'bg-fika-900' : 'bg-fika-200'} ${updatingSettings ? 'opacity-50' : ''}`}
+                                >
+                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${user.emailNotifications ? 'translate-x-6' : 'translate-x-1'}`} />
+                                </button>
                             </div>
                         </div>
 

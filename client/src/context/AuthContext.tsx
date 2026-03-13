@@ -8,6 +8,7 @@ export interface AuthUser {
     name: string;
     email: string;
     avatar?: string;
+    emailNotifications?: boolean;
 }
 
 interface AuthContextValue {

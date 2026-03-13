@@ -7,6 +7,7 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '../prisma/generated/client';
+import { isDue, sendDailySummaryEmail } from './services/email';
 
 dotenv.config();
 
@@ -131,10 +132,24 @@ app.get('/auth/me', async (req, res) => {
         const payload = jwt.verify(token, JWT_SECRET) as { userId: string };
         const user = await prisma.user.findUnique({ where: { id: payload.userId } });
         if (!user) { res.json(null); return; }
-        const { id, name, email, avatar } = user;
-        res.json({ id, name, email, avatar });
+        const { id, name, email, avatar, emailNotifications } = user;
+        res.json({ id, name, email, avatar, emailNotifications });
     } catch {
         res.json(null);
+    }
+});
+
+app.put('/api/user/settings', requireAuth, async (req, res) => {
+    const userId = (req.user as any).id;
+    const { emailNotifications } = req.body;
+    try {
+        const user = await prisma.user.update({
+            where: { id: userId },
+            data: { emailNotifications: !!emailNotifications }
+        });
+        res.json(user);
+    } catch {
+        res.status(500).json({ error: 'Failed to update user settings' });
     }
 });
 
@@ -264,6 +279,40 @@ app.post('/api/contacts/import', requireAuth, async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to import contacts' });
+    }
+});
+
+// ─── CRON JOB ─────────────────────────────────────────────────────────────
+// This should ideally be protected via an auth secret from the cron provider
+app.get('/api/cron/daily-emails', async (req, res) => {
+    // Basic protection to prevent random hits
+    const cronSecret = req.headers.authorization;
+    if (process.env.CRON_SECRET && cronSecret !== `Bearer ${process.env.CRON_SECRET}`) {
+        res.status(401).json({ error: 'Unauthorized cron trigger' });
+        return;
+    }
+
+    try {
+        // Find users with notifications enabled and their contacts
+        const users = await prisma.user.findMany({
+            where: { emailNotifications: true },
+            include: { contacts: true }
+        });
+
+        let sentCount = 0;
+        for (const user of users) {
+            // Filter contacts that are actually due
+            const dueContacts = user.contacts.filter((c: any) => isDue(c));
+            if (dueContacts.length > 0) {
+                await sendDailySummaryEmail(user.email, user.name, dueContacts);
+                sentCount++;
+            }
+        }
+
+        res.json({ ok: true, message: `Sent emails to ${sentCount} users.` });
+    } catch (e) {
+        console.error('Cron job error:', e);
+        res.status(500).json({ error: 'Failed to run daily emails' });
     }
 });
 
