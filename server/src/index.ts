@@ -18,9 +18,9 @@ const prisma = new PrismaClient();
 const PORT = process.env.PORT || 5000;
 
 if (!process.env.JWT_SECRET) {
-    throw new Error('FATAL ERROR: JWT_SECRET environment variable is not set.');
+    console.warn('WARNING: JWT_SECRET environment variable is not set. Using a fallback secret.');
 }
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET || 'fika-dev-fallback-secret';
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
 app.use(cors({
