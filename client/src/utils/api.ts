@@ -1,13 +1,11 @@
 import type { Contact } from '../types';
-import { getAuthToken } from '../context/AuthContext';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const LS_KEY = 'fika_contacts_v2';
 
-/** Build auth headers from the stored JWT */
-const authHeaders = (): HeadersInit => {
-    const token = getAuthToken();
-    return token ? { Authorization: `Bearer ${token}` } : {};
+// Config to ensure HttpOnly cookies are sent
+const fetchConfig = {
+    credentials: 'include' as RequestCredentials,
 };
 
 // Serialise a Contact (frontend shape) to the shape the server expects
@@ -62,9 +60,7 @@ const fromLocalStorage = (): Contact[] => {
 export const fetchContacts = async (authenticated = false): Promise<Contact[]> => {
     if (!authenticated) return fromLocalStorage();
     try {
-        const res = await fetch(`${API}/api/contacts`, {
-            headers: authHeaders(),
-        });
+        const res = await fetch(`${API}/api/contacts`, fetchConfig);
         if (!res.ok) return [];
         const data = await res.json();
         return Array.isArray(data) ? data.map(fromServer) : [];
@@ -75,8 +71,9 @@ export const fetchContacts = async (authenticated = false): Promise<Contact[]> =
 
 export const createContact = async (data: Omit<Contact, 'id' | 'created_at' | 'updated_at'>): Promise<Contact> => {
     const res = await fetch(`${API}/api/contacts`, {
+        ...fetchConfig,
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(toServer(data)),
     });
     return fromServer(await res.json());
@@ -84,16 +81,17 @@ export const createContact = async (data: Omit<Contact, 'id' | 'created_at' | 'u
 
 export const updateContact = async (id: string, data: Omit<Contact, 'id' | 'created_at' | 'updated_at'>): Promise<void> => {
     await fetch(`${API}/api/contacts/${id}`, {
+        ...fetchConfig,
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(toServer(data)),
     });
 };
 
 export const deleteContact = async (id: string): Promise<void> => {
     await fetch(`${API}/api/contacts/${id}`, {
+        ...fetchConfig,
         method: 'DELETE',
-        headers: authHeaders(),
     });
 };
 
@@ -104,8 +102,9 @@ export const saveContacts = async (contacts: Contact[]): Promise<void> => {
 
 export const updateUserSettings = async (settings: { emailNotifications: boolean }): Promise<void> => {
     await fetch(`${API}/api/user/settings`, {
+        ...fetchConfig,
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings)
     });
 };

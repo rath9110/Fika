@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth, getAuthToken } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import { updateUserSettings } from '../utils/api';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -21,10 +21,10 @@ const AccountView: React.FC<Props> = ({ onClose }) => {
     const handleImport = async () => {
         setImporting(true);
         try {
-            const token = getAuthToken();
             await fetch(`${API}/api/contacts/import`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ contacts: localContacts }),
             });
             localStorage.removeItem(LS_KEY);

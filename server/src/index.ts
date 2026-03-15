@@ -6,6 +6,8 @@ import dotenv from 'dotenv';
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import jwt from 'jsonwebtoken';
+import cookieParser from 'cookie-parser';
+import xss from 'xss';
 import { PrismaClient } from '../prisma/generated/client';
 import { isDue, sendDailySummaryEmail } from './services/email';
 
@@ -14,7 +16,11 @@ dotenv.config();
 const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 5000;
-const JWT_SECRET = process.env.JWT_SECRET || process.env.SESSION_SECRET || 'fika-jwt-fallback';
+
+if (!process.env.JWT_SECRET) {
+    throw new Error('FATAL ERROR: JWT_SECRET environment variable is not set.');
+}
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
 app.use(cors({
@@ -22,6 +28,7 @@ app.use(cors({
     credentials: true,
 }));
 app.use(express.json());
+app.use(cookieParser());
 
 app.get('/api/fs', (req, res) => {
     try {
@@ -86,13 +93,12 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 
 // ─── JWT AUTH MIDDLEWARE ───────────────────────────────────────────────────────
 const requireAuth = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const token = req.cookies.jwt || req.headers.authorization?.split(' ')[1];
+    if (!token) {
         res.status(401).json({ error: 'Not authenticated' });
         return;
     }
     try {
-        const token = authHeader.split(' ')[1];
         const payload = jwt.verify(token, JWT_SECRET) as { userId: string };
         const user = await prisma.user.findUnique({ where: { id: payload.userId } });
         if (!user) {
@@ -116,19 +122,36 @@ app.get('/auth/google/callback',
     (req, res) => {
         const user = req.user as any;
         const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '30d' });
+        
+        // Secure JWT storage in HttpOnly cookie
+        res.cookie('jwt', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+        });
+
         const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-        res.redirect(`${frontendUrl}?token=${token}`);
+        res.redirect(frontendUrl);
     }
 );
 
+app.post('/auth/logout', (req, res) => {
+    res.clearCookie('jwt', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    });
+    res.json({ ok: true });
+});
+
 app.get('/auth/me', async (req, res) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const token = req.cookies.jwt || req.headers.authorization?.split(' ')[1];
+    if (!token) {
         res.json(null);
         return;
     }
     try {
-        const token = authHeader.split(' ')[1];
         const payload = jwt.verify(token, JWT_SECRET) as { userId: string };
         const user = await prisma.user.findUnique({ where: { id: payload.userId } });
         if (!user) { res.json(null); return; }
@@ -172,17 +195,20 @@ app.post('/api/contacts', requireAuth, async (req, res) => {
     const userId = (req.user as any).id;
     const { name, cadence_interval_days, birthday, birthday_pre_reminder, snoozed_until, snooze_count, note } = req.body;
     try {
+        const sanitizedName = xss(name || 'Unknown');
+        const sanitizedNote = note ? xss(note) : null;
+
         const contact = await prisma.contact.create({
             data: {
                 userId,
-                name: name || 'Unknown',
+                name: sanitizedName,
                 cadence_interval_days: Number(cadence_interval_days) || 30,
                 last_contacted_at: new Date(),
                 birthday: birthday ? new Date(birthday) : null,
                 birthday_pre_reminder: !!birthday_pre_reminder,
                 snoozed_until: snoozed_until ? new Date(snoozed_until) : null,
                 snooze_count: typeof snooze_count === 'number' ? snooze_count : 0,
-                note: note || null,
+                note: sanitizedNote,
             },
         });
         res.status(201).json(contact);
@@ -197,17 +223,20 @@ app.put('/api/contacts/:id', requireAuth, async (req, res) => {
     const userId = (req.user as any).id;
     const { name, cadence_interval_days, last_contacted_at, birthday, birthday_pre_reminder, snoozed_until, snooze_count, note } = req.body;
     try {
+        const sanitizedName = name ? xss(name) : undefined;
+        const sanitizedNote = note !== undefined ? (note ? xss(note) : null) : undefined;
+
         const contact = await prisma.contact.updateMany({
             where: { id: String(id), userId },
             data: {
-                name,
+                name: sanitizedName,
                 cadence_interval_days: Number(cadence_interval_days) || 30,
                 last_contacted_at: last_contacted_at ? new Date(last_contacted_at) : undefined,
                 birthday: birthday ? new Date(birthday) : null,
                 birthday_pre_reminder: !!birthday_pre_reminder,
                 snoozed_until: snoozed_until === null ? null : (snoozed_until ? new Date(snoozed_until) : undefined),
                 snooze_count: typeof snooze_count === 'number' ? snooze_count : undefined,
-                note: note || null,
+                note: sanitizedNote,
             },
         });
         res.json(contact);
@@ -236,8 +265,10 @@ app.post('/api/interactions', requireAuth, async (req, res) => {
         const contact = await prisma.contact.findFirst({ where: { id: contactId, userId } });
         if (!contact) return res.status(403).json({ error: 'Forbidden' });
 
+        const sanitizedNotes = notes ? xss(notes) : null;
+
         const interaction = await prisma.interaction.create({
-            data: { contactId, type, notes },
+            data: { contactId, type: xss(type), notes: sanitizedNotes },
         });
 
         await prisma.contact.update({
@@ -263,14 +294,14 @@ app.post('/api/contacts/import', requireAuth, async (req, res) => {
                 prisma.contact.create({
                     data: {
                         userId,
-                        name: c.name || 'Unknown',
+                        name: xss(c.name || 'Unknown'),
                         cadence_interval_days: Number(c.cadence_interval_days) || 30,
                         last_contacted_at: c.last_contacted_at ? new Date(c.last_contacted_at) : new Date(),
                         birthday: c.birthday ? new Date(c.birthday) : null,
                         birthday_pre_reminder: !!c.birthday_pre_reminder,
                         snoozed_until: c.snoozed_until ? new Date(c.snoozed_until) : null,
                         snooze_count: typeof c.snooze_count === 'number' ? c.snooze_count : 0,
-                        note: c.note || null,
+                        note: c.note ? xss(c.note) : null,
                     },
                 })
             )

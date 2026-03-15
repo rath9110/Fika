@@ -20,6 +20,7 @@
     "@types/express": "^5.0.6",
     "@types/node": "^25.2.3",
     "connect-pg-simple": "^10.0.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
@@ -31,10 +32,12 @@
     "pg": "^8.18.0",
     "prisma": "^6.2.1",
     "reflect-metadata": "^0.2.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "xss": "^1.0.15"
   },
   "devDependencies": {
     "@types/connect-pg-simple": "^7.0.3",
+    "@types/cookie-parser": "^1.4.10",
     "@types/express-session": "^1.18.2",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/nodemailer": "^7.0.11",
