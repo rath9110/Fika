@@ -1,6 +1,6 @@
 # Fika - Social Maintenance Ritual
 
-Fika is a privacy-first personal relationship management tool designed to eliminate "Emotional Friction". Instead of an alphabetical list, it turns social maintenance into a warm, low-pressure ritual.
+Fika is a relationship management tool designed to eliminate "Emotional Friction". Instead of an alphabetical list, it turns maintaining relationships into a warm, low-pressure ritual.
 
 ## Our Aim
 The primary aim of Fika is to transform the act of reaching out to your network from a stressful, overwhelming chore into a simple, no-judgement ritual. We want to help you effortlessly nurture meaningful connections with the people who matter most without the anxiety of feeling like you're falling behind.
